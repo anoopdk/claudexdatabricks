@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__databricks__execute_sql",
+      "mcp__databricks__manage_pipeline_run",
+      "mcp__databricks__manage_workspace_files"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "databricks"
+  ]
+}

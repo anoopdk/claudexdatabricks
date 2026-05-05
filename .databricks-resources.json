@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "resources": [
+    {
+      "type": "schema",
+      "name": "claude_aidevkit.raw",
+      "id": "claude_aidevkit.raw",
+      "created_at": "2026-05-05T13:10:23.872194+00:00",
+      "updated_at": "2026-05-05T13:10:23.872194+00:00"
+    },
+    {
+      "type": "volume",
+      "name": "claude_aidevkit.raw.source_obt_file",
+      "id": "claude_aidevkit.raw.source_obt_file",
+      "created_at": "2026-05-05T15:24:25.867983+00:00",
+      "updated_at": "2026-05-05T15:24:25.867983+00:00"
+    },
+    {
+      "type": "schema",
+      "name": "claude_aidevkit.bronze",
+      "id": "claude_aidevkit.bronze",
+      "created_at": "2026-05-05T15:52:34.828431+00:00",
+      "updated_at": "2026-05-05T15:52:34.828431+00:00"
+    },
+    {
+      "type": "pipeline",
+      "name": "claude_aidevkit_obt_bronze",
+      "id": "bc21fe09-ad63-4ae8-b10e-cf4c1fd146c9",
+      "created_at": "2026-05-05T15:58:25.317822+00:00",
+      "updated_at": "2026-05-05T15:58:41.351387+00:00"
+    },
+    {
+      "type": "schema",
+      "name": "claude_aidevkit.silver",
+      "id": "claude_aidevkit.silver",
+      "created_at": "2026-05-05T21:10:44.816422+00:00",
+      "updated_at": "2026-05-05T21:10:44.816422+00:00"
+    },
+    {
+      "type": "pipeline",
+      "name": "claude_aidevkit_obt_silver",
+      "id": "f9243ac3-6e5c-4e3c-808a-0172e2e00faf",
+      "created_at": "2026-05-05T21:14:00.000000+00:00",
+      "updated_at": "2026-05-05T21:14:00.000000+00:00"
+    },
+    {
+      "type": "job",
+      "name": "claude_aidevkit_obt_bronze_to_silver",
+      "id": "918971891980938",
+      "created_at": "2026-05-05T21:17:29.026000+00:00",
+      "updated_at": "2026-05-05T21:17:29.026000+00:00"
+    }
+  ]
+}
