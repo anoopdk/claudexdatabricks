@@ -1,0 +1,49 @@
+bundle:
+  name: claudexdatabricks
+
+# Sync only pipeline source files; exclude runtime artifacts and IDE files
+sync:
+  include:
+    - src/pipelines/**
+  exclude:
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - "**/.DS_Store"
+
+workspace:
+  host: https://dbc-0f540a54-8135.cloud.databricks.com
+  # Files are synced under each user's bundle workspace root
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+variables:
+  catalog:
+    description: Unity Catalog catalog name for all pipeline targets
+    default: claude_aidevkit
+
+  notification_email:
+    description: Email address for job failure notifications
+    default: anoopdk@gmail.com
+
+# Include all resource definition files
+include:
+  - resources/pipelines/*.yml
+  - resources/jobs/*.yml
+
+targets:
+  # ── Development ────────────────────────────────────────────────────────────
+  # 'mode: development' automatically prefixes all resource names with
+  # [dev <username>] so dev resources never collide with production.
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: claude_aidevkit
+
+  # ── Production ─────────────────────────────────────────────────────────────
+  # 'mode: production' enforces that runs_as is set and disables dev prefixes.
+  prod:
+    mode: production
+    variables:
+      catalog: claude_aidevkit
+    run_as:
+      user_name: anoopdk@gmail.com

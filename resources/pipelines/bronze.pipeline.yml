@@ -1,0 +1,27 @@
+resources:
+  pipelines:
+    obt_bronze:
+      name: claude_aidevkit_obt_bronze
+      description: >
+        Bronze layer — incremental ingestion of OBT Excel files from the UC Volume
+        into four raw streaming tables (bronze_order, bronze_customer, bronze_product,
+        bronze_sales) using Auto Loader + mapInPandas/openpyxl. No transformations applied.
+
+      catalog: ${var.catalog}
+      schema: bronze
+      serverless: true
+      channel: CURRENT
+
+      libraries:
+        - file:
+            path: ../../src/pipelines/obt_bronze/pipeline.py
+
+      # openpyxl required for reading .xlsx files inside mapInPandas
+      environment:
+        dependencies:
+          - openpyxl
+
+      tags:
+        project: claudexdatabricks
+        layer: bronze
+        managed_by: dab

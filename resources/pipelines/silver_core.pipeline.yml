@@ -1,0 +1,26 @@
+resources:
+  pipelines:
+    obt_silver_core:
+      name: claude_aidevkit_obt_silver_core
+      description: >
+        Silver Core layer — reads bronze streaming tables via source views that apply
+        standardisation (trim, regexp_replace, round, to_date) and data quality
+        expectations (@dp.expect_all_or_drop). Produces four silver core tables:
+          - customer_scd2   (SCD Type 2 — full customer attribute history)
+          - product_scd2    (SCD Type 2 — full product attribute history)
+          - orders_clean    (SCD Type 1 — latest order state, dedup on order_id)
+          - sales_clean     (SCD Type 1 — latest sales state, dedup on order_id+product_id)
+
+      catalog: ${var.catalog}
+      schema: silver
+      serverless: true
+      channel: CURRENT
+
+      libraries:
+        - file:
+            path: ../../src/pipelines/obt_silver/pipeline_core.py
+
+      tags:
+        project: claudexdatabricks
+        layer: silver_core
+        managed_by: dab

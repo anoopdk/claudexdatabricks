@@ -1,0 +1,63 @@
+resources:
+  jobs:
+    e2e_workflow:
+      name: claude_aidevkit_obt_bronze_to_gold
+      description: >
+        End-to-end Medallion pipeline: Bronze → Silver Core → Silver Dimensional → Gold.
+        Each stage runs only after the previous completes successfully (ALL_SUCCESS).
+        All pipelines run in incremental mode (full_refresh: false) by default.
+
+      max_concurrent_runs: 1
+
+      tasks:
+        # ── Stage 1: Bronze ───────────────────────────────────────────────────
+        - task_key: bronze_pipeline
+          description: >
+            Ingest new OBT Excel files from UC Volume into 4 raw streaming tables
+            via Auto Loader + mapInPandas/openpyxl.
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.obt_bronze.id}
+            full_refresh: false
+
+        # ── Stage 2: Silver Core ──────────────────────────────────────────────
+        - task_key: silver_core
+          description: >
+            Apply data quality expectations, standardise types/formats, and run
+            apply_changes (SCD2 for dims, SCD1 for facts).
+          depends_on:
+            - task_key: bronze_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.obt_silver_core.id}
+            full_refresh: false
+
+        # ── Stage 3: Silver Dimensional ───────────────────────────────────────
+        - task_key: silver_dimensional
+          description: >
+            Rebuild star-schema materialized views (dim_customer, dim_product,
+            dim_orders, fact_sales) with SCD2-aware surrogate key joins.
+          depends_on:
+            - task_key: silver_core
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.obt_silver_dimensional.id}
+            full_refresh: false
+
+        # ── Stage 4: Gold ─────────────────────────────────────────────────────
+        - task_key: gold
+          description: >
+            Compute business aggregation materialized views for BI consumption
+            (monthly_revenue_by_segment, product_performance).
+          depends_on:
+            - task_key: silver_dimensional
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.obt_gold.id}
+            full_refresh: false
+
+      # Notify on failure
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+        no_alert_for_skipped_runs: true
+
+      tags:
+        project: claudexdatabricks
+        managed_by: dab

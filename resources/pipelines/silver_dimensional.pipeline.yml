@@ -1,0 +1,27 @@
+resources:
+  pipelines:
+    obt_silver_dimensional:
+      name: claude_aidevkit_obt_silver_dimensional
+      description: >
+        Silver Dimensional layer — builds a star schema from silver core tables using
+        @dp.materialized_view (batch semantics). Produces:
+          - dim_customer   (all SCD2 versions; surrogate key = SHA2(customer_id||__start_at))
+          - dim_product    (all SCD2 versions; surrogate key = SHA2(product_id||__start_at))
+          - dim_orders     (calendar attributes per order)
+          - fact_sales     (SCD2-aware date-range join resolves correct dim versions at order_date)
+        Materialized views enable non-equi joins and full refresh on schema changes,
+        which are not possible in streaming mode.
+
+      catalog: ${var.catalog}
+      schema: silver
+      serverless: true
+      channel: CURRENT
+
+      libraries:
+        - file:
+            path: ../../src/pipelines/obt_silver/pipeline_dimensional.py
+
+      tags:
+        project: claudexdatabricks
+        layer: silver_dimensional
+        managed_by: dab
