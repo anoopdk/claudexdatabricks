@@ -1,13 +1,9 @@
 resources:
   pipelines:
     obt_gold:
+      # Gold layer — business aggregation materialized views
+      # monthly_revenue_by_segment and product_performance
       name: claude_aidevkit_obt_gold
-      description: >
-        Gold layer — business-ready aggregation materialized views built from the silver
-        star schema. Joins fact_sales with dim tables using SCD2-aware surrogate keys,
-        ensuring historical accuracy. Produces:
-          - monthly_revenue_by_segment  (monthly revenue/orders by customer segment)
-          - product_performance         (units sold, revenue, discount metrics by product/category)
 
       catalog: ${var.catalog}
       schema: gold

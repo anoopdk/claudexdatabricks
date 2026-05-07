@@ -8,10 +8,10 @@ sync:
   exclude:
     - "**/__pycache__/**"
     - "**/*.pyc"
-    - "**/.DS_Store"
 
 workspace:
   host: https://dbc-0f540a54-8135.cloud.databricks.com
+  profile: DEFAULT
   # Files are synced under each user's bundle workspace root
   root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
 

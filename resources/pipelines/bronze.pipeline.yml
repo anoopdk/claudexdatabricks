@@ -1,11 +1,9 @@
 resources:
   pipelines:
     obt_bronze:
+      # Bronze layer — incremental ingestion of OBT Excel files from the UC Volume
+      # into four raw streaming tables via Auto Loader + mapInPandas/openpyxl.
       name: claude_aidevkit_obt_bronze
-      description: >
-        Bronze layer — incremental ingestion of OBT Excel files from the UC Volume
-        into four raw streaming tables (bronze_order, bronze_customer, bronze_product,
-        bronze_sales) using Auto Loader + mapInPandas/openpyxl. No transformations applied.
 
       catalog: ${var.catalog}
       schema: bronze
