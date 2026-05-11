@@ -13,6 +13,20 @@ resources:
         - file:
             path: ../../src/pipelines/obt_silver/pipeline_core.py
 
+      sources:
+        - name: bronze_customer
+          table:
+            name: claude_aidevkit.bronze.bronze_customer
+        - name: bronze_product
+          table:
+            name: claude_aidevkit.bronze.bronze_product
+        - name: bronze_order
+          table:
+            name: claude_aidevkit.bronze.bronze_order
+        - name: bronze_sales
+          table:
+            name: claude_aidevkit.bronze.bronze_sales
+
       tags:
         project: claudexdatabricks
         layer: silver_core

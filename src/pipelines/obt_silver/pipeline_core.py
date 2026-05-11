@@ -1,41 +1,10 @@
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 
-# ── Data quality expectations ─────────────────────────────────────────────────
-# Inlined here because Databricks workspace notebooks cannot be imported as
-# Python modules (NotebookImportException).  Keep these in sync with the
-# corresponding files under config/exceptions/ (source of truth for local dev).
-
-_customer_scd2_expt = {
-    "customer_scd2__valid_customer_id":        "customer_id      IS NOT NULL",
-    # Hyphen placed last in [...] so it is literal, not a range operator
-    "customer_scd2__no_special_chars_name":    "customer_name    NOT RLIKE '[^a-zA-Z0-9 _.,-]'",
-    "customer_scd2__no_special_chars_email":   "email            NOT RLIKE '[^a-zA-Z0-9@.+_-]'",
-    "customer_scd2__no_special_chars_segment": "customer_segment NOT RLIKE '[^a-zA-Z0-9 _.-]'",
-}
-
-_product_scd2_expt = {
-    "product_scd2__valid_product_id":          "product_id   IS NOT NULL",
-    "product_scd2__no_special_chars_name":     "product_name NOT RLIKE '[^a-zA-Z0-9 _.,()/-]'",
-    "product_scd2__no_special_chars_category": "category     NOT RLIKE '[^a-zA-Z0-9 _.-]'",
-    "product_scd2__non_negative_unit_price":   "unit_price   >= 0",
-}
-
-_orders_clean_expt = {
-    "orders_clean__valid_order_id":   "order_id   IS NOT NULL",
-    "orders_clean__valid_order_date": "order_date IS NOT NULL",
-}
-
-_sales_clean_expt = {
-    "sales_clean__valid_order_id":               "order_id        IS NOT NULL",
-    "sales_clean__valid_product_id":             "product_id      IS NOT NULL",
-    "sales_clean__valid_customer_id":            "customer_id     IS NOT NULL",
-    "sales_clean__non_negative_quantity":        "quantity        >= 0",
-    "sales_clean__non_negative_discount":        "discount        >= 0",
-    "sales_clean__non_negative_gross_sales":     "gross_sales     >= 0",
-    "sales_clean__non_negative_discount_amount": "discount_amount >= 0",
-    "sales_clean__non_negative_net_sales":       "net_sales       >= 0",
-}
+from config.exceptions.customer_scd2_expt import customer_scd2_expt
+from config.exceptions.product_scd2_expt import product_scd2_expt
+from config.exceptions.orders_clean_expt import orders_clean_expt
+from config.exceptions.sales_clean_expt import sales_clean_expt
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SOURCE VIEWS
@@ -43,12 +12,11 @@ _sales_clean_expt = {
 # 2 d.p., parse dates.  Bad rows are dropped before the SCD merge.
 # ══════════════════════════════════════════════════════════════════════════════
 
-@dp.expect_all_or_drop(_customer_scd2_expt)
+@dp.expect_all_or_drop(customer_scd2_expt)
 @dp.view
 def v_bronze_customer():
     return (
-        spark.readStream
-        .table("claude_aidevkit.bronze.bronze_customer")
+        dp.read("bronze_customer")
         .select(
             F.trim(F.col("customer_id")).alias("customer_id"),
             F.regexp_replace(F.trim(F.col("customer_name")), r"[^\w\s\-\.\,]", "").alias("customer_name"),
@@ -59,12 +27,11 @@ def v_bronze_customer():
     )
 
 
-@dp.expect_all_or_drop(_product_scd2_expt)
+@dp.expect_all_or_drop(product_scd2_expt)
 @dp.view
 def v_bronze_product():
     return (
-        spark.readStream
-        .table("claude_aidevkit.bronze.bronze_product")
+        dp.read("bronze_product")
         .select(
             F.trim(F.col("product_id")).alias("product_id"),
             F.regexp_replace(F.trim(F.col("product_name")), r"[^\w\s\-\.\,\(\)\/]", "").alias("product_name"),
@@ -75,12 +42,11 @@ def v_bronze_product():
     )
 
 
-@dp.expect_all_or_drop(_orders_clean_expt)
+@dp.expect_all_or_drop(orders_clean_expt)
 @dp.view
 def v_bronze_order():
     return (
-        spark.readStream
-        .table("claude_aidevkit.bronze.bronze_order")
+        dp.read("bronze_order")
         .select(
             F.trim(F.col("order_id")).alias("order_id"),
             F.to_date(F.col("order_date"), "yyyy-MM-dd").alias("order_date"),
@@ -89,12 +55,11 @@ def v_bronze_order():
     )
 
 
-@dp.expect_all_or_drop(_sales_clean_expt)
+@dp.expect_all_or_drop(sales_clean_expt)
 @dp.view
 def v_bronze_sales():
     return (
-        spark.readStream
-        .table("claude_aidevkit.bronze.bronze_sales")
+        dp.read("bronze_sales")
         .select(
             F.trim(F.col("order_id")).alias("order_id"),
             F.trim(F.col("product_id")).alias("product_id"),
@@ -122,7 +87,7 @@ dp.create_streaming_table(
     comment="SCD Type 2 customer master — full attribute history keyed on customer_id",
     cluster_by=["customer_id"],
 )
-dp.apply_changes(
+dp.create_auto_cdc_flow(
     target="claude_aidevkit.silver.customer_scd2",
     source="v_bronze_customer",
     keys=["customer_id"],
@@ -137,7 +102,7 @@ dp.create_streaming_table(
     comment="SCD Type 2 product master — full attribute history keyed on product_id",
     cluster_by=["product_id"],
 )
-dp.apply_changes(
+dp.create_auto_cdc_flow(
     target="claude_aidevkit.silver.product_scd2",
     source="v_bronze_product",
     keys=["product_id"],
@@ -152,7 +117,7 @@ dp.create_streaming_table(
     comment="Deduplicated, standardised orders — latest state per order_id (SCD Type 1)",
     cluster_by=["order_date"],
 )
-dp.apply_changes(
+dp.create_auto_cdc_flow(
     target="claude_aidevkit.silver.orders_clean",
     source="v_bronze_order",
     keys=["order_id"],
@@ -167,7 +132,7 @@ dp.create_streaming_table(
     comment="Deduplicated, standardised sales line items — latest state per (order_id, product_id)",
     cluster_by=["order_id"],
 )
-dp.apply_changes(
+dp.create_auto_cdc_flow(
     target="claude_aidevkit.silver.sales_clean",
     source="v_bronze_sales",
     keys=["order_id", "product_id"],
